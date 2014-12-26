@@ -96,3 +96,6 @@
 (assert (= (get-places [[] [] [] [:bob :fred]]) [:fred :bob]))
 (assert (= (winner [[] [] [] [:bob :fred]]) :fred))
 (assert (= (get-places [[] [] [] [:a :b] [:awesome-face :bob :fred]]) [:fred :bob :awesome-face :b :a]))
+
+(get-winner-chances [[:white :green :orange :blue :yellow] [] [] [] [] [] [] [] [] [] [] [] [] [] [] [] [] [] [] [] []]
+                    [:green :orange :blue :white])
