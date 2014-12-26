@@ -26,10 +26,12 @@
 (get-board-after-drop [[] [:orange :green] [:blue :yellow :white] -1 [] [] [] [] [] [] [] []] 3 [:fred])
 
 (defn dice-for-one-leg
-  []
-  (let [color-order (shuffle camel-colors)
+  [played-colors]
+  (let [color-order (shuffle (remove (set played-colors) camel-colors))
         rolled-dice (map #(identity [%1 (rand-nth die-options)]) color-order)]
     rolled-dice))
+
+(dice-for-one-leg [:green :white :orange :yellow])
 
 (defn move
   [board color distance]
@@ -45,21 +47,21 @@
 (move [[] [:orange :green] [:blue :yellow :white] -1 [] [] [] [] []] :yellow 1)
 
 (defn one-leg
-  ([board] (one-leg board (dice-for-one-leg)))
-  ([board dice]
+  ([board played-colors] (one-leg board played-colors (dice-for-one-leg played-colors)))
+  ([board played-colors dice]
    (let [[[color distance] & rest-dice] dice]
-   (if (empty? dice) board
-     (one-leg (move board color distance) rest-dice)))))
+     (if (empty? dice) board
+       (one-leg (move board color distance) played-colors rest-dice)))))
 
 (defn get-winner-count
-  ([board] (get-winner-count board 1000 {}))
-  ([board count results]
+  ([board played-colors] (get-winner-count board played-colors 1000 {}))
+  ([board played-colors count results]
    (if (= count 0) results
-   (let [result (one-leg board)
-         winning-camel (winner result)
-         losing-camel (loser result)
-         new-results (update-in results [winning-camel] inc)]
-     (recur board (dec count) new-results)))))
+     (let [result (one-leg board played-colors)
+           winning-camel (winner result)
+           losing-camel (loser result)
+           new-results (update-in results [winning-camel] inc)]
+       (recur board played-colors (dec count) new-results)))))
 
 (defn get-chances
   [winners]
@@ -68,10 +70,12 @@
     percentages))
 
 (defn get-winner-chances
-  [board]
-  (get-chances (get-winner-count board)))
+  [board played-colors]
+  (get-chances (get-winner-count board played-colors)))
 
-(get-winner-chances [[:green :orange :blue :yellow] -1 [] -1 [] -1 [:white] [] [] [] [] [] [] [] [] [] [] [] []])
+(one-leg [[:white :green :orange :blue :yellow] -1 [] -1 [] -1 [] [] [] [] [] [] [] [] [] [] [] [] [] [] []] [:green :orange :blue :white])
+
+(get-winner-chances [[:white :green :orange :blue :yellow] [] [] -1 [] -1 [] [] [] [] [] [] [] [] [] [] [] [] [] [] []] [:green :orange :blue :white])
 
 (defn loser
   [board]
