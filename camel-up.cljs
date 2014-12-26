@@ -67,7 +67,11 @@
         percentages (map #(identity {(first %1) (/ (second %1) total)}) (seq winners))]
     percentages))
 
-(get-chances (get-winner-count [[] [:orange :green] [:blue :yellow] -1 [:white] [] [] [] [] [] [] [] [] [] [] [] [] [] []]))
+(defn get-winner-chances
+  [board]
+  (get-chances (get-winner-count board)))
+
+(get-winner-chances [[:green :orange :blue :yellow] -1 [] -1 [] -1 [:white] [] [] [] [] [] [] [] [] [] [] [] []])
 
 (defn loser
   [board]
