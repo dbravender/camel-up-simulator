@@ -23,7 +23,10 @@
         new-board (assoc board final-location drop-location-camels)]
     new-board))
 
-(get-board-after-drop [[] [:orange :green] [:blue :yellow :white] -1 [] [] [] [] [] [] [] []] 3 [:fred])
+(assert (= (get-board-after-drop [[] [:orange :green] [:yellow :white] -1] 3 [:blue])
+           [[] [:orange :green] [:blue :yellow :white] -1]))
+(assert (= (get-board-after-drop [[] [:orange :green] [:yellow :white] []] 1 [:blue])
+           [[] [:orange :green :blue] [:yellow :white] []]))
 
 (defn dice-for-one-leg
   [played-colors]
@@ -31,7 +34,8 @@
         rolled-dice (map #(identity [%1 (rand-nth die-options)]) color-order)]
     rolled-dice))
 
-(dice-for-one-leg [:green :white :orange :yellow])
+(assert (= (keys (dice-for-one-leg [:green :white :orange :yellow]))
+           [:blue]))
 
 (defn move
   [board color distance]
@@ -44,7 +48,8 @@
         board-after-drop (get-board-after-drop new-board (+ grab-location distance) picked-up-camels)]
     board-after-drop))
 
-(move [[] [:orange :green] [:blue :yellow :white] -1 [] [] [] [] []] :yellow 1)
+(assert (= (move [[] [:orange :green] [:blue :yellow :white] -1] :yellow 1)
+           [[] [:orange :green] [:yellow :white :blue] -1]))
 
 (defn one-leg
   ([board played-colors] (one-leg board played-colors (dice-for-one-leg played-colors)))
@@ -52,6 +57,18 @@
    (let [[[color distance] & rest-dice] dice]
      (if (empty? dice) board
        (one-leg (move board color distance) played-colors rest-dice)))))
+
+(defn loser
+  [board]
+  (last (get-places board)))
+
+(defn winner
+  [board]
+  (first (get-places board)))
+
+(defn get-places
+  [board]
+  (mapcat reverse (filter seq (reverse (filter #(not (number? %)) board)))))
 
 (defn get-winner-count
   ([board played-colors] (get-winner-count board played-colors 1000 {}))
@@ -73,23 +90,9 @@
   [board played-colors]
   (get-chances (get-winner-count board played-colors)))
 
-(one-leg [[:white :green :orange :blue :yellow] -1 [] -1 [] -1 [] [] [] [] [] [] [] [] [] [] [] [] [] [] []] [:green :orange :blue :white])
+(assert (= (get-winner-chances [[:white :green :orange :blue :yellow] [] [] -1 [] -1 [] [] [] [] [] [] [] [] [] [] [] [] [] [] []] [:green :orange :blue :white])
+           [{:yellow 1}]))
 
-(get-winner-chances [[:white :green :orange :blue :yellow] [] [] -1 [] -1 [] [] [] [] [] [] [] [] [] [] [] [] [] [] []] [:green :orange :blue :white])
-
-(defn loser
-  [board]
-  (last (get-places board)))
-
-(defn winner
-  [board]
-  (first (get-places board)))
-
-(defn get-places
-  [board]
-  (mapcat reverse (filter seq (reverse (filter #(not (number? %)) board)))))
-
-(get-places [[] [] [] [:bob :fred]])
-
-(winner [[] [] [] [:bob :fred]])
-(get-places [[] [] [] [:a :b] [:awesome-face :bob :fred]])
+(assert (= (get-places [[] [] [] [:bob :fred]]) [:fred :bob]))
+(assert (= (winner [[] [] [] [:bob :fred]]) :fred))
+(assert (= (get-places [[] [] [] [:a :b] [:awesome-face :bob :fred]]) [:fred :bob :awesome-face :b :a]))
