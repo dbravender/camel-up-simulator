@@ -1,7 +1,5 @@
 (ns camel-up)
 
-(def board-state (vec (repeat 20 [])))
-
 (def camel-colors [:blue :yellow :green :orange :white])
 
 (def die-options [1 2 3])
@@ -16,8 +14,6 @@
   [color board]
   (index-of (map #(if (seqable? %1) (some #{color} %1) nil) board) color))
 
-(current-location :red [[:white] [:red]])
-
 (defn get-board-after-drop
   [board location picked-up-camels]
   (let [location-value (nth board location)
@@ -28,6 +24,12 @@
     new-board))
 
 (get-board-after-drop [[] [:orange :green] [:blue :yellow :white] -1 [] [] [] [] [] [] [] []] 3 [:fred])
+
+(defn dice-for-one-leg
+  []
+  (let [color-order (shuffle camel-colors)
+        rolled-dice (map #(identity [%1 (rand-nth die-options)]) color-order)]
+    rolled-dice))
 
 (defn move
   [board color distance]
@@ -42,6 +44,31 @@
 
 (move [[] [:orange :green] [:blue :yellow :white] -1 [] [] [] [] []] :yellow 1)
 
+(defn one-leg
+  ([board] (one-leg board (dice-for-one-leg)))
+  ([board dice]
+   (let [[[color distance] & rest-dice] dice]
+   (if (empty? dice) board
+     (one-leg (move board color distance) rest-dice)))))
+
+(defn get-winner-count
+  ([board] (get-winner-count board 1000 {}))
+  ([board count results]
+   (if (= count 0) results
+   (let [result (one-leg board)
+         winning-camel (winner result)
+         losing-camel (loser result)
+         new-results (update-in results [winning-camel] inc)]
+     (recur board (dec count) new-results)))))
+
+(defn get-chances
+  [winners]
+  (let [total (apply + (vals winners))
+        percentages (map #(identity {(first %1) (/ (second %1) total)}) (seq winners))]
+    percentages))
+
+(get-chances (get-winner-count [[] [:orange :green] [:blue :yellow] -1 [:white] [] [] [] [] [] [] [] [] [] [] [] [] [] []]))
+
 (defn loser
   [board]
   (last (get-places board)))
@@ -52,7 +79,7 @@
 
 (defn get-places
   [board]
-  (mapcat reverse (filter seq (reverse board))))
+  (mapcat reverse (filter seq (reverse (filter #(not (number? %)) board)))))
 
 (get-places [[] [] [] [:bob :fred]])
 
